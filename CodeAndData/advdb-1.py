@@ -12,56 +12,84 @@ transactions = [['1', 'Department', 'Music'], ['5', 'Civil_status', 'Divorced'],
 DB_Log = []  # <-- You WILL populate this as you go
 
 
-def recovery_script(log: list):  # <--- Your CODE
+def recovery_script(log: list, index, data_base):
 
-    restored_database = {}  # Initialize the restored database
-    for entry in log:
-        individual_id, attribute, new_value = entry
-        if individual_id not in restored_database:
-            restored_database[individual_id] = {
-                'Department': '', 'Civil_Status': '', 'Salary': ''}
-
-        restored_database[individual_id][attribute] = new_value
-
-    '''
-    Restore the database to stable and sound condition, by processing the DB log.
-    '''
     print("Calling your recovery script with DB_Log as an argument.")
     print("Recovery in process ...\n")
-    return restored_database
-    pass
+
+    error_log = log[index]
+    error_id, f_name, l_name, sal, depart, civil_s = error_log
+    print(error_log)
+    for backup_entry in data_base:
+        unique_id = backup_entry[0]
+        first_name = backup_entry[1]
+        last_name = backup_entry[2]
+        salary = backup_entry[3]
+        department = backup_entry[4]
+        civil_status = backup_entry[5]
+        # Check if any transaction in the log corresponds to this data entry
+
+        if error_id == unique_id:
+            print(backup_entry)
+            log[index] = backup_entry
+            break
+
+    # Create a separate file for logging and rollback
+    log_file = 'CodeAndData/rollback_log.csv'
+
+    # Write the current contents of DB_Log to the log file
+    with open(log_file, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerows(log)
+    print(f"Rollback log saved to {log_file}")
+    # Update DB_Log with the original values from data_base
 
 
-def transaction_processing():  # <-- Your CODE
+pass
+
+
+def transaction_processing(data_base, index):
     '''
     1. Process transaction in the transaction queue.
     2. Updates DB_Log accordingly
     3. This function does NOT commit the updates, just execute them
     '''
+    # Add headers to DB_Log if it's empty
+    if not DB_Log:
+        DB_Log.append(["Unique_ID", "First_name", "Last_name",
+                       "Salary", "Department", "Civil_status"])
 
-    updated_DB_Log = []
+    transaction = transactions[index]
+    transaction_id, attribute, value = transaction
 
-    for transaction in transactions:
-        individual_id, attribute, new_value = transaction
-        # Update the database log
-        updated_DB_Log.append([individual_id, attribute, new_value])
+    # Find the entry in the database with the corresponding Unique_ID
+    for data_entry in data_base:
+        unique_id, first_name, last_name, salary, department, civil_status = data_entry
 
-        # Execute the transaction by updating the database directly
-        if individual_id in data_base:
-            data_base[individual_id][attribute] = new_value
-        else:
-            data_base[individual_id] = {attribute: new_value}
+        if unique_id == transaction_id:
+            # Update the attribute value
+            if attribute == 'Salary':
+                salary = value
 
-        # Check if the current transaction is one of the specified transactions
-        if individual_id in ['1', '5', '15']:
-            # Commit the changes after processing each specified transaction
-            # This ensures that transactions are satisfactorily completed only when a commit has occurred
+            elif attribute == 'Department':
+                department = value
+                civil_status = data_entry[5]
 
-            print(f"Committing changes for transaction ID {individual_id}...")
-            #  commit changes
+            elif attribute == 'Civil_status':
+                department = data_entry[4]
+                civil_status = value
 
-    # Return the updated database log
-    return updated_DB_Log
+            # Update the data_base entry
+
+            # Update DB_Log
+            DB_Log.append([unique_id, first_name, last_name,
+                           salary, department, civil_status])
+            print(DB_Log[index])
+            print(f"Transaction ID={transaction_id} processed successfully.")
+            break
+
+
+pass
 
 
 def read_file(file_name: str) -> list:
@@ -106,14 +134,14 @@ def main():
     number_of_transactions = len(transactions)
     must_recover = False
     data_base = read_file('CodeAndData/Employees_DB_ADV.csv')
-    failure = is_there_a_failure()
+    failure = 0
     failing_transaction_index = None
     while not failure:
         # Process transaction
         for index in range(number_of_transactions):
-
             # <--- Your CODE (Call function transaction_processing)
             print(f"\nProcessing transaction No. {index+1}.")
+            transaction_processing(data_base, index)
             print("UPDATES have not been committed yet...\n")
 
             failure = is_there_a_failure()
@@ -122,23 +150,33 @@ def main():
                 failing_transaction_index = index + 1
                 print(
                     f'There was a failure whilst processing transaction No. {failing_transaction_index}.')
+                # Print the contents of DB_Log when an exception/failure is detected
+                print(" Logging & Rollback System contents:")
+                for entry in DB_Log:
+                    print(entry)
                 break
             else:
                 print(
                     f'Transaction No. {index+1} has been commited! Changes are permanent.')
+                # Create a separate file for logging and rollback
+                commit_file = 'CodeAndData/commit_log.csv'
+                # Write the current contents of DB_Log to the log file
+                with open(commit_file, 'w', newline='') as csvfile:
+                    writer = csv.writer(csvfile)
+                    writer.writerows(data_base)
 
     if must_recover:
         # Call your recovery script
         # Call the recovery function to restore DB to sound state
-        recovery_script(DB_Log)
+        recovery_script(DB_Log, failing_transaction_index, data_base)
     else:
         # All transactiones ended up well
         print("All transaction ended up well.")
         print("Updates to the database were committed!\n")
 
     print('The data entries AFTER updates -and RECOVERY, if necessary- are presented below:')
-    for item in data_base:
-        print(item)
+    # for item in DB_Log:
+    # print(item)
 
 
 main()
