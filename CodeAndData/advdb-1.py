@@ -19,7 +19,7 @@ def recovery_script(log: list, index, data_base):
 
     error_log = log[index]
     error_id, f_name, l_name, sal, depart, civil_s = error_log
-    print(error_log)
+
     for backup_entry in data_base:
         unique_id = backup_entry[0]
         first_name = backup_entry[1]
@@ -54,11 +54,6 @@ def transaction_processing(data_base, index):
     2. Updates DB_Log accordingly
     3. This function does NOT commit the updates, just execute them
     '''
-    # Add headers to DB_Log if it's empty
-    if not DB_Log:
-        DB_Log.append(["Unique_ID", "First_name", "Last_name",
-                       "Salary", "Department", "Civil_status"])
-
     transaction = transactions[index]
     transaction_id, attribute, value = transaction
 
@@ -84,12 +79,32 @@ def transaction_processing(data_base, index):
             # Update DB_Log
             DB_Log.append([unique_id, first_name, last_name,
                            salary, department, civil_status])
-            print(DB_Log[index])
             print(f"Transaction ID={transaction_id} processed successfully.")
             break
 
 
 pass
+
+
+def commit_processing(db_log, index, database):
+    if 0 <= index < len(db_log):
+        log_entry = db_log[index]
+
+        for data_entry in database:
+            unique_id = data_entry[0]  # Unique_ID
+
+            if unique_id == log_entry[0]:
+                # Update the data entry with the information from the log entry
+                data_entry[1:] = log_entry[1:]
+                print("Transaction committed successfully.")
+                print(data_entry)
+                return
+
+        # Entry with specified ID not found
+        print(f"Entry with ID={log_entry[0]} not found in the database.")
+    else:
+        # Invalid index
+        print("Invalid index.")
 
 
 def read_file(file_name: str) -> list:
@@ -134,7 +149,7 @@ def main():
     number_of_transactions = len(transactions)
     must_recover = False
     data_base = read_file('CodeAndData/Employees_DB_ADV.csv')
-    failure = 0
+    failure = is_there_a_failure()
     failing_transaction_index = None
     while not failure:
         # Process transaction
@@ -158,6 +173,7 @@ def main():
             else:
                 print(
                     f'Transaction No. {index+1} has been commited! Changes are permanent.')
+                commit_processing(DB_Log, index, data_base)
                 # Create a separate file for logging and rollback
                 commit_file = 'CodeAndData/commit_log.csv'
                 # Write the current contents of DB_Log to the log file
@@ -168,15 +184,15 @@ def main():
     if must_recover:
         # Call your recovery script
         # Call the recovery function to restore DB to sound state
-        recovery_script(DB_Log, failing_transaction_index, data_base)
+        recovery_script(DB_Log, index, data_base)
     else:
         # All transactiones ended up well
         print("All transaction ended up well.")
         print("Updates to the database were committed!\n")
 
     print('The data entries AFTER updates -and RECOVERY, if necessary- are presented below:')
-    # for item in DB_Log:
-    # print(item)
+    for item in data_base:
+        print(item)
 
 
 main()
