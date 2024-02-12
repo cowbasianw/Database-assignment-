@@ -144,6 +144,17 @@ def is_there_a_failure() -> bool:
         result = False
     return result
 
+def construct_log(transid, table, attribute, beforeimage, afterimage, timestamp, userid):
+    log_structure = [
+            transid,
+            table,
+            attribute,
+            beforeimage,
+            afterimage,
+            timestamp,
+            userid
+    ]
+    return log_structure
 
 def main():
     number_of_transactions = len(transactions)
