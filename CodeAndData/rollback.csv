@@ -1,0 +1,4 @@
+transaction_id,timestamp,attribute,old_value,new_value,status
+1,2024-02-12 17:48:26,Department,Projects,Music,executed
+5,2024-02-12 17:48:26,Civil_status,Married,Divorced,executed
+15,2024-02-12 17:48:26,Salary,321000,200000,rolled-back
