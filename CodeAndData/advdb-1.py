@@ -1,4 +1,7 @@
 # Adv DB Winter 2024 - 1
+# Assignmnet 1 Logging and Rollback
+# Shawn Tian and Austin Bec
+# February 15, 2024
 import csv
 import random
 import time
